@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevicePreview Studio</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #151823;
+      --border: #2a2d3e;
+      --accent: #5b6af5;
+      --accent-strong: #7480ff;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --preview-scale: 1;
+      color-scheme: dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      min-width: 320px;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      background: #222638;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    button:hover {
+      background: #2a3046;
+      border-color: #3b4159;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      grid-template-rows: 64px minmax(0, 1fr);
+      height: 100vh;
+      min-height: 0;
+    }
+
+    .topbar {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(26, 29, 39, 0.98);
+      backdrop-filter: blur(12px);
+      z-index: 4;
+    }
+
+    .brand {
+      grid-column: 1;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--accent);
+      border-radius: 7px;
+      position: relative;
+      flex: 0 0 auto;
+      box-shadow: inset 0 0 0 3px rgba(91, 106, 245, 0.15);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 3px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .brand-text {
+      min-width: 0;
+      font-weight: 700;
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .url-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1 1 auto;
+      min-width: 220px;
+    }
+
+    .url-input,
+    .number-input,
+    .history-select {
+      height: 38px;
+      border: 1px solid var(--border);
+      background: #10131d;
+      color: var(--text);
+      border-radius: 6px;
+    }
+
+    .url-input {
+      width: 100%;
+      min-width: 120px;
+      padding: 0 12px;
+    }
+
+    .history-select {
+      width: 42px;
+      padding: 0 6px;
+      color: var(--muted);
+    }
+
+    .number-input {
+      width: 88px;
+      padding: 0 8px;
+    }
+
+    .primary-button {
+      height: 38px;
+      padding: 0 14px;
+      border-color: transparent;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      font-weight: 650;
+    }
+
+    .primary-button:hover {
+      background: var(--accent-strong);
+      border-color: transparent;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .icon-button,
+    .text-button {
+      height: 38px;
+      min-width: 38px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 0 10px;
+    }
+
+    .text-button {
+      min-width: auto;
+      white-space: nowrap;
+    }
+
+    .toggle-button.active {
+      border-color: var(--accent);
+      background: rgba(91, 106, 245, 0.22);
+      color: #fff;
+    }
+
+    .scale-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #10131d;
+    }
+
+    .scale-slider {
+      width: 118px;
+      accent-color: var(--accent);
+    }
+
+    .scale-value {
+      width: 42px;
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sidebar {
+      grid-column: 1;
+      grid-row: 2;
+      min-height: 0;
+      overflow: auto;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .sidebar-inner {
+      padding: 14px;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .device-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .device-button {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      text-align: left;
+    }
+
+    .device-button.active {
+      border-color: var(--accent);
+      background: rgba(91, 106, 245, 0.18);
+    }
+
+    .device-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .device-meta {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .custom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .custom-grid label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .custom-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .custom-actions .text-button {
+      flex: 1 1 0;
+    }
+
+    .sidebar-note {
+      margin: 16px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .workspace {
+      grid-column: 2;
+      grid-row: 2;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
+      min-height: 0;
+      background:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+        var(--bg);
+      background-size: 24px 24px;
+    }
+
+    .warning-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.12);
+      color: #f8d18b;
+      font-size: 13px;
+      line-height: 1.4;
+      z-index: 3;
+    }
+
+    .warning-banner.visible {
+      display: flex;
+    }
+
+    .warning-actions {
+      display: flex;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .warning-button {
+      height: 32px;
+      padding: 0 10px;
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.16);
+      color: #ffd89b;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .canvas {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      scrollbar-gutter: stable both-edges;
+      padding: 34px;
+    }
+
+    .single-preview {
+      min-width: 100%;
+      min-height: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    .preview-column {
+      width: var(--scaled-shell-width);
+      min-height: calc(var(--scaled-shell-height) + 48px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 14px;
+    }
+
+    .preview-shell {
+      width: var(--scaled-shell-width);
+      height: var(--scaled-shell-height);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      overflow: visible;
+    }
+
+    .bezel {
+      position: relative;
+      flex: 0 0 auto;
+      width: calc(var(--device-width) + (var(--bezel) * 2));
+      height: calc(var(--device-height) + (var(--bezel) * 2));
+      padding: var(--bezel);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, #2a2e3c, #0d0f16 58%, #252a37);
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      transform: scale(var(--preview-scale));
+      transform-origin: top center;
+    }
+
+    .bezel.phone::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      top: 8px;
+      left: 50%;
+      width: 74px;
+      height: 22px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: #05060a;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .bezel.desktop {
+      padding: var(--bezel);
+      background: #10131d;
+    }
+
+    .bezel.desktop::after {
+      content: "";
+      position: absolute;
+      left: 18%;
+      right: 18%;
+      bottom: -22px;
+      height: 20px;
+      border-radius: 0 0 7px 7px;
+      background: #252a37;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-top: 0;
+    }
+
+    .screen {
+      position: relative;
+      width: var(--device-width);
+      height: var(--device-height);
+      overflow: hidden;
+      border-radius: calc(var(--radius) - var(--bezel) - 2px);
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
+
+    .bezel.desktop .screen {
+      border-radius: 2px;
+    }
+
+    .screen iframe {
+      display: block;
+      width: var(--device-width);
+      height: var(--device-height);
+      border: 0;
+      background: #fff;
+    }
+
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background: #111827;
+      color: #9ca3af;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+
+    .empty-state.hidden {
+      display: none;
+    }
+
+    .preview-label {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .preview-label strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .label-pill {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(26, 29, 39, 0.92);
+    }
+
+    .compare-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 32px;
+      min-height: 100%;
+      padding: 0 0 22px;
+    }
+
+    .compare-row .preview-column {
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1160px) {
+      .app {
+        grid-template-columns: 252px minmax(0, 1fr);
+      }
+
+      .topbar {
+        gap: 8px;
+      }
+
+      .scale-slider {
+        width: 86px;
+      }
+
+      .text-button span.optional {
+        display: none;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 64px;
+      }
+
+      .app {
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 767px) {
+      html,
+      body {
+        overflow: hidden;
+      }
+
+      .app {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: 52px auto 162px minmax(0, 1fr);
+        height: 100dvh;
+      }
+
+      .brand {
+        grid-column: 1;
+        grid-row: 1;
+        padding: 0 12px;
+        border-right: 0;
+      }
+
+      .brand-mark {
+        width: 24px;
+        height: 24px;
+      }
+
+      .brand-text {
+        font-size: 14px;
+      }
+
+      .topbar {
+        grid-column: 1;
+        grid-row: 2;
+        align-items: stretch;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+      }
+
+      .url-form {
+        flex: 1 0 100%;
+        min-width: 0;
+      }
+
+      .history-select {
+        display: none;
+      }
+
+      .toolbar-group,
+      .scale-control {
+        overflow-x: auto;
+      }
+
+      .toolbar-group {
+        flex: 1 1 auto;
+      }
+
+      .scale-control {
+        flex: 1 1 148px;
+        min-width: 148px;
+      }
+
+      .scale-slider {
+        min-width: 78px;
+        width: 100%;
+      }
+
+      .text-button,
+      .icon-button,
+      .primary-button,
+      .url-input {
+        height: 36px;
+      }
+
+      .text-button {
+        padding: 0 9px;
+      }
+
+      .sidebar {
+        grid-column: 1;
+        grid-row: 3;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .sidebar-inner {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        min-width: max-content;
+        padding: 10px;
+      }
+
+      .section {
+        flex: 0 0 auto;
+        margin: 0;
+      }
+
+      .device-list {
+        display: flex;
+        gap: 6px;
+      }
+
+      .device-button {
+        width: 164px;
+        min-height: 40px;
+      }
+
+      .device-name {
+        font-size: 12px;
+      }
+
+      .device-meta {
+        font-size: 11px;
+      }
+
+      .custom-grid {
+        width: 184px;
+      }
+
+      .custom-actions {
+        width: 184px;
+      }
+
+      .sidebar-note {
+        display: none;
+      }
+
+      .workspace {
+        grid-column: 1;
+        grid-row: 4;
+      }
+
+      .warning-banner {
+        align-items: flex-start;
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .warning-actions {
+        flex-direction: column;
+      }
+
+      .canvas {
+        padding: 14px;
+      }
+
+      .single-preview {
+        align-items: flex-start;
+        justify-content: center;
+      }
+
+      .preview-column {
+        gap: 10px;
+      }
+
+      .preview-label {
+        gap: 6px;
+        font-size: 11px;
+      }
+
+      .label-pill {
+        height: 22px;
+        max-width: 100%;
+      }
+
+      .compare-row {
+        gap: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="brand" aria-label="Application">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div class="brand-text">DevicePreview Studio</div>
+    </header>
+
+    <form class="topbar" id="urlForm">
+      <div class="url-form">
+        <input class="url-input" id="urlInput" list="historyList" type="text" inputmode="url" autocomplete="url" placeholder="https://example.com" aria-label="Website URL">
+        <datalist id="historyList"></datalist>
+        <select class="history-select" id="historySelect" title="URL history" aria-label="URL history">
+          <option value="">History</option>
+        </select>
+        <button class="primary-button" type="submit">Preview</button>
+      </div>
+
+      <div class="toolbar-group" aria-label="Orientation">
+        <button class="text-button toggle-button" id="portraitBtn" type="button" title="Portrait orientation">Portrait</button>
+        <button class="text-button toggle-button" id="landscapeBtn" type="button" title="Landscape orientation">Landscape</button>
+        <button class="icon-button" id="rotateBtn" type="button" title="Rotate device" aria-label="Rotate device">↻</button>
+      </div>
+
+      <div class="scale-control" aria-label="Preview scale">
+        <input class="scale-slider" id="scaleSlider" type="range" min="8" max="150" step="1" value="100" aria-label="Scale percentage">
+        <output class="scale-value" id="scaleValue">100%</output>
+      </div>
+
+      <div class="toolbar-group" aria-label="Actions">
+        <button class="text-button" id="autoFitBtn" type="button" title="Reset scale to auto-fit">Auto-fit</button>
+        <button class="text-button" id="compareBtn" type="button" title="Compare multiple devices"><span class="optional">Compare</span> Mode</button>
+        <button class="text-button" id="copyLinkBtn" type="button" title="Copy shareable link">Copy <span class="optional">Link</span></button>
+      </div>
+    </form>
+
+    <aside class="sidebar" aria-label="Device presets">
+      <div class="sidebar-inner" id="sidebarContent"></div>
+    </aside>
+
+    <main class="workspace">
+      <div class="warning-banner" id="warningBanner" role="status">
+        <span>This site blocks iframe embedding. Try opening in a new tab.</span>
+        <div class="warning-actions">
+          <button class="warning-button" id="openBlockedBtn" type="button">Open in new tab</button>
+          <button class="warning-button" id="dismissWarningBtn" type="button" aria-label="Dismiss warning">Dismiss</button>
+        </div>
+      </div>
+      <section class="canvas" id="canvas" aria-label="Preview canvas">
+        <div class="single-preview" id="previewRoot"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const DEVICE_CATEGORIES = [
+      {
+        category: "Mobile",
+        devices: [
+          { name: "iPhone SE", width: 375, height: 667, pixelRatio: 2, type: "phone", userAgent: "iOS Safari" },
+          { name: "iPhone 15 Pro", width: 393, height: 852, pixelRatio: 3, type: "phone", userAgent: "iOS Safari" },
+          { name: "iPhone 15 Pro Max", width: 430, height: 932, pixelRatio: 3, type: "phone", userAgent: "iOS Safari" },
+          { name: "Samsung Galaxy S24", width: 360, height: 780, pixelRatio: 3, type: "phone", userAgent: "Android Chrome" },
+          { name: "Samsung Galaxy S24 Ultra", width: 412, height: 915, pixelRatio: 3.5, type: "phone", userAgent: "Android Chrome" },
+          { name: "Google Pixel 8", width: 412, height: 915, pixelRatio: 2.6, type: "phone", userAgent: "Android Chrome" },
+          { name: "OnePlus 12", width: 412, height: 919, pixelRatio: 3.5, type: "phone", userAgent: "Android Chrome" }
+        ]
+      },
+      {
+        category: "Tablet",
+        devices: [
+          { name: "iPad Mini", width: 768, height: 1024, pixelRatio: 2, type: "tablet", userAgent: "iPadOS Safari" },
+          { name: "iPad Air", width: 820, height: 1180, pixelRatio: 2, type: "tablet", userAgent: "iPadOS Safari" },
+          { name: "iPad Pro 12.9\"", width: 1024, height: 1366, pixelRatio: 2, type: "tablet", userAgent: "iPadOS Safari" },
+          { name: "Samsung Galaxy Tab S9", width: 800, height: 1280, pixelRatio: 2, type: "tablet", userAgent: "Android Chrome" }
+        ]
+      },
+      {
+        category: "Desktop",
+        devices: [
+          { name: "MacBook Air 13\"", width: 1280, height: 800, pixelRatio: 2, type: "desktop", userAgent: "macOS Safari" },
+          { name: "MacBook Pro 14\"", width: 1512, height: 982, pixelRatio: 2, type: "desktop", userAgent: "macOS Safari" },
+          { name: "Full HD Monitor", width: 1920, height: 1080, pixelRatio: 1, type: "desktop", userAgent: "Desktop Chrome" },
+          { name: "4K Monitor", width: 2560, height: 1440, pixelRatio: 1, type: "desktop", userAgent: "Desktop Chrome" }
+        ]
+      }
+    ];
+
+    const PRESETS = DEVICE_CATEGORIES.flatMap((group) => group.devices);
+    const COMPARE_NAMES = ["MacBook Air 13\"", "MacBook Pro 14\"", "Full HD Monitor", "4K Monitor"];
+    const HISTORY_KEY = "devicepreview.history";
+    const BLOCK_TIMEOUT_MS = 2800;
+    const SCALE_EPSILON = 0.001;
+
+    const state = {
+      url: "",
+      selectedName: "Full HD Monitor",
+      device: { ...PRESETS.find((device) => device.name === "Full HD Monitor") },
+      orientation: "portrait",
+      autoFit: true,
+      scale: 1,
+      compareMode: false,
+      loadTimer: null,
+      lastLoadId: 0
+    };
+
+    const els = {
+      sidebarContent: document.getElementById("sidebarContent"),
+      urlForm: document.getElementById("urlForm"),
+      urlInput: document.getElementById("urlInput"),
+      historyList: document.getElementById("historyList"),
+      historySelect: document.getElementById("historySelect"),
+      canvas: document.getElementById("canvas"),
+      previewRoot: document.getElementById("previewRoot"),
+      warningBanner: document.getElementById("warningBanner"),
+      openBlockedBtn: document.getElementById("openBlockedBtn"),
+      dismissWarningBtn: document.getElementById("dismissWarningBtn"),
+      portraitBtn: document.getElementById("portraitBtn"),
+      landscapeBtn: document.getElementById("landscapeBtn"),
+      rotateBtn: document.getElementById("rotateBtn"),
+      scaleSlider: document.getElementById("scaleSlider"),
+      scaleValue: document.getElementById("scaleValue"),
+      autoFitBtn: document.getElementById("autoFitBtn"),
+      compareBtn: document.getElementById("compareBtn"),
+      copyLinkBtn: document.getElementById("copyLinkBtn")
+    };
+
+    function normalizeUrl(rawUrl) {
+      const trimmed = rawUrl.trim();
+      if (!trimmed) return "";
+      if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
+    }
+
+    function getShellMetrics(device) {
+      const type = device.type || "custom";
+      const bezel = type === "phone" ? 12 : type === "tablet" ? 14 : 10;
+      const radius = type === "phone" ? 40 : type === "tablet" ? 22 : 8;
+      return {
+        bezel,
+        radius,
+        shellWidth: device.width + bezel * 2,
+        shellHeight: device.height + bezel * 2
+      };
+    }
+
+    function calcScale(deviceW, deviceH, containerW, containerH) {
+      const safeContainerW = Math.max(1, Number(containerW) || 1);
+      const safeContainerH = Math.max(1, Number(containerH) || 1);
+      const scaleX = (safeContainerW - 80) / deviceW;
+      const scaleY = (safeContainerH - 120) / deviceH;
+      return Math.max(0.08, Math.min(scaleX, scaleY, 1));
+    }
+
+    function getAutoScale(device = state.device) {
+      const metrics = getShellMetrics(device);
+      const canvasRect = els.canvas.getBoundingClientRect();
+      return calcScale(metrics.shellWidth, metrics.shellHeight, canvasRect.width, canvasRect.height);
+    }
+
+    function setScale(scale, autoFit = false) {
+      const nextScale = Math.max(0.08, Math.min(Number(scale) || 0.08, 1.5));
+      const scaleChanged = Math.abs(nextScale - state.scale) > SCALE_EPSILON;
+      const autoFitChanged = state.autoFit !== autoFit;
+      state.scale = nextScale;
+      state.autoFit = autoFit;
+      els.scaleSlider.value = Math.round(state.scale * 100);
+      els.scaleValue.textContent = `${Math.round(state.scale * 100)}%`;
+      if (!scaleChanged && !autoFitChanged) return;
+      updateRenderedScale();
+    }
+
+    function getHistory() {
+      try {
+        const value = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+        return Array.isArray(value) ? value.filter(Boolean).slice(0, 10) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function isLikelyBlockedUrl(url) {
+      try {
+        const host = new URL(url).hostname.replace(/^www\./, "");
+        return [
+          "google.com",
+          "youtube.com",
+          "facebook.com",
+          "instagram.com",
+          "x.com",
+          "twitter.com",
+          "github.com",
+          "linkedin.com"
+        ].some((domain) => host === domain || host.endsWith(`.${domain}`));
+      } catch {
+        return false;
+      }
+    }
+
+    function saveHistory(url) {
+      if (!url) return;
+      const next = [url, ...getHistory().filter((item) => item !== url)].slice(0, 10);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const urls = getHistory();
+      els.historyList.innerHTML = urls.map((url) => `<option value="${escapeHtml(url)}"></option>`).join("");
+      els.historySelect.innerHTML = `<option value="">History</option>${urls.map((url) => `<option value="${escapeHtml(url)}">${escapeHtml(url)}</option>`).join("")}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      }[char]));
+    }
+
+    function renderSidebar() {
+      const categoryMarkup = DEVICE_CATEGORIES.map((group) => {
+        const devices = group.devices.map((device) => `
+          <button class="device-button" type="button" data-device="${escapeHtml(device.name)}">
+            <span class="device-name">${escapeHtml(device.name)}</span>
+            <span class="device-meta">${device.width}×${device.height}</span>
+          </button>
+        `).join("");
+        return `
+          <section class="section">
+            <h2 class="section-title">${escapeHtml(group.category)}</h2>
+            <div class="device-list">${devices}</div>
+          </section>
+        `;
+      }).join("");
+
+      els.sidebarContent.innerHTML = `
+        ${categoryMarkup}
+        <section class="section">
+          <h2 class="section-title">Custom</h2>
+          <div class="custom-grid">
+            <label>Width
+              <input class="number-input" id="customWidth" type="number" min="100" max="9999" step="1" value="${state.device.width}">
+            </label>
+            <label>Height
+              <input class="number-input" id="customHeight" type="number" min="100" max="9999" step="1" value="${state.device.height}">
+            </label>
+          </div>
+          <div class="custom-actions">
+            <button class="text-button" id="applyCustomBtn" type="button">Apply</button>
+            <button class="text-button" id="swapCustomBtn" type="button">Swap</button>
+          </div>
+        </section>
+        <p class="sidebar-note">Default view is a desktop monitor so a phone user can inspect the computer layout of any URL. Iframes use viewport dimensions, but browsers do not allow pages to spoof device pixel ratio or user agent from static HTML.</p>
+      `;
+
+      els.sidebarContent.querySelectorAll("[data-device]").forEach((button) => {
+        button.addEventListener("click", () => selectDevice(button.dataset.device));
+      });
+      document.getElementById("applyCustomBtn").addEventListener("click", applyCustomDevice);
+      document.getElementById("swapCustomBtn").addEventListener("click", swapCustomInputs);
+      updateDeviceButtons();
+    }
+
+    function updateDeviceButtons() {
+      document.querySelectorAll("[data-device]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.device === state.selectedName);
+      });
+      const customWidth = document.getElementById("customWidth");
+      const customHeight = document.getElementById("customHeight");
+      if (customWidth && customHeight) {
+        customWidth.value = state.device.width;
+        customHeight.value = state.device.height;
+      }
+    }
+
+    function selectDevice(name, preserveOrientation = false) {
+      const preset = PRESETS.find((device) => device.name === name);
+      if (!preset) return;
+      const next = { ...preset };
+      state.selectedName = preset.name;
+      state.orientation = preserveOrientation ? state.orientation : "portrait";
+      if (state.orientation === "landscape" && next.height > next.width) {
+        [next.width, next.height] = [next.height, next.width];
+      }
+      state.device = next;
+      state.autoFit = true;
+      updateDeviceButtons();
+      updateOrientationButtons();
+      syncUrlParams();
+      renderPreviews();
+      setScale(getAutoScale(), true);
+    }
+
+    function applyCustomDevice() {
+      const width = Number(document.getElementById("customWidth").value);
+      const height = Number(document.getElementById("customHeight").value);
+      if (!Number.isFinite(width) || !Number.isFinite(height) || width < 100 || height < 100) return;
+      state.selectedName = "Custom";
+      state.device = {
+        name: "Custom",
+        width: Math.round(width),
+        height: Math.round(height),
+        pixelRatio: window.devicePixelRatio || 1,
+        type: "custom",
+        userAgent: "Current browser"
+      };
+      state.orientation = state.device.width >= state.device.height ? "landscape" : "portrait";
+      state.autoFit = true;
+      updateDeviceButtons();
+      updateOrientationButtons();
+      syncUrlParams();
+      renderPreviews();
+      setScale(getAutoScale(), true);
+    }
+
+    function swapCustomInputs() {
+      const widthInput = document.getElementById("customWidth");
+      const heightInput = document.getElementById("customHeight");
+      [widthInput.value, heightInput.value] = [heightInput.value, widthInput.value];
+      applyCustomDevice();
+    }
+
+    function rotateDevice() {
+      [state.device.width, state.device.height] = [state.device.height, state.device.width];
+      state.orientation = state.device.width >= state.device.height ? "landscape" : "portrait";
+      state.autoFit = true;
+      updateDeviceButtons();
+      updateOrientationButtons();
+      syncUrlParams();
+      renderPreviews();
+      setScale(getAutoScale(), true);
+    }
+
+    function setOrientation(orientation) {
+      if (state.orientation === orientation) return;
+      rotateDevice();
+    }
+
+    function updateOrientationButtons() {
+      els.portraitBtn.classList.toggle("active", state.orientation === "portrait");
+      els.landscapeBtn.classList.toggle("active", state.orientation === "landscape");
+    }
+
+    function makePreview(device, index = 0) {
+      const metrics = getShellMetrics(device);
+      const shellScale = state.compareMode ? Math.min(state.scale, getAutoScale(device)) : state.scale;
+      const scaledShellWidth = Math.round(metrics.shellWidth * shellScale);
+      const scaledShellHeight = Math.round(metrics.shellHeight * shellScale);
+      const isLoaded = Boolean(state.url);
+      const src = isLoaded ? state.url : "about:blank";
+      const label = `${device.width}×${device.height} CSS px · DPR ${device.pixelRatio}`;
+      const compareScaleText = state.compareMode ? `Scaled to ${Math.round(shellScale * 100)}%` : `Scaled to ${Math.round(state.scale * 100)}%`;
+
+      return `
+        <article class="preview-column" style="--scaled-shell-width:${scaledShellWidth}px; --scaled-shell-height:${scaledShellHeight}px;">
+          <div class="preview-shell" style="
+            --device-width:${device.width}px;
+            --device-height:${device.height}px;
+            --bezel:${metrics.bezel}px;
+            --radius:${metrics.radius}px;
+            --shell-width:${metrics.shellWidth}px;
+            --shell-height:${metrics.shellHeight}px;
+            --preview-scale:${shellScale};
+          ">
+            <div class="bezel ${escapeHtml(device.type || "custom")}">
+              <div class="screen">
+                <iframe title="${escapeHtml(device.name)} preview" data-preview-frame="${index}" src="${escapeHtml(src)}"></iframe>
+                <div class="empty-state ${isLoaded ? "hidden" : ""}">Enter a URL to preview this viewport.</div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-label">
+            <strong>${escapeHtml(device.name)}</strong>
+            <span class="label-pill">${escapeHtml(label)}</span>
+            <span class="label-pill">${compareScaleText}</span>
+            <span class="label-pill">${escapeHtml(device.userAgent || "Current browser")}</span>
+          </div>
+        </article>
+      `;
+    }
+
+    function getCompareDevices() {
+      const selected = state.selectedName === "Custom" ? state.device : PRESETS.find((device) => device.name === state.selectedName);
+      const compare = COMPARE_NAMES.map((name) => PRESETS.find((device) => device.name === name)).filter(Boolean);
+      const merged = [selected, ...compare].filter(Boolean);
+      const unique = [];
+      const seen = new Set();
+      merged.forEach((device) => {
+        if (!seen.has(device.name) && unique.length < 4) {
+          seen.add(device.name);
+          const next = { ...device };
+          if (state.orientation === "landscape" && next.height > next.width) {
+            [next.width, next.height] = [next.height, next.width];
+          }
+          if (state.orientation === "portrait" && next.width > next.height && next.type !== "desktop") {
+            [next.width, next.height] = [next.height, next.width];
+          }
+          unique.push(next);
+        }
+      });
+      return unique;
+    }
+
+    function renderPreviews() {
+      const previewMarkup = state.compareMode
+        ? `<div class="compare-row">${getCompareDevices().map((device, index) => makePreview(device, index)).join("")}</div>`
+        : makePreview(state.device, 0);
+
+      els.previewRoot.innerHTML = previewMarkup;
+      els.previewRoot.classList.toggle("compare-row", false);
+      bindFrameLoadDetection();
+      els.compareBtn.classList.toggle("active", state.compareMode);
+      els.autoFitBtn.classList.toggle("active", state.autoFit);
+    }
+
+    function updateRenderedScale() {
+      const columns = Array.from(document.querySelectorAll(".preview-column"));
+      const shells = Array.from(document.querySelectorAll(".preview-shell"));
+      const labels = Array.from(document.querySelectorAll(".preview-label"));
+      if (!columns.length || !shells.length) return;
+
+      const devices = state.compareMode ? getCompareDevices() : [state.device];
+      devices.forEach((device, index) => {
+        const metrics = getShellMetrics(device);
+        const shellScale = state.compareMode ? Math.min(state.scale, getAutoScale(device)) : state.scale;
+        const column = columns[index];
+        const shell = shells[index];
+        const scalePill = labels[index] && labels[index].querySelectorAll(".label-pill")[1];
+        if (!column || !shell) return;
+        column.style.setProperty("--scaled-shell-width", `${Math.round(metrics.shellWidth * shellScale)}px`);
+        column.style.setProperty("--scaled-shell-height", `${Math.round(metrics.shellHeight * shellScale)}px`);
+        shell.style.setProperty("--preview-scale", shellScale);
+        if (scalePill) scalePill.textContent = `Scaled to ${Math.round(shellScale * 100)}%`;
+      });
+
+      els.compareBtn.classList.toggle("active", state.compareMode);
+      els.autoFitBtn.classList.toggle("active", state.autoFit);
+    }
+
+    function bindFrameLoadDetection() {
+      clearTimeout(state.loadTimer);
+      const frames = Array.from(document.querySelectorAll("[data-preview-frame]"));
+      if (!state.url || !frames.length) return;
+      const loadId = ++state.lastLoadId;
+      let loadedCount = 0;
+      hideWarning();
+
+      if (isLikelyBlockedUrl(state.url)) {
+        showWarning();
+      }
+
+      state.loadTimer = window.setTimeout(() => {
+        if (loadId === state.lastLoadId && loadedCount === 0) showWarning();
+      }, BLOCK_TIMEOUT_MS);
+
+      frames.forEach((frame) => {
+        frame.addEventListener("load", () => {
+          loadedCount += 1;
+          window.setTimeout(() => {
+            if (loadId !== state.lastLoadId) return;
+            if (isLikelyBlockedUrl(state.url)) {
+              showWarning();
+              return;
+            }
+            let blocked = false;
+            try {
+              const href = frame.contentWindow.location.href;
+              blocked = href === "about:blank" && state.url !== "about:blank";
+            } catch {
+              blocked = false;
+            }
+            if (blocked) {
+              showWarning();
+            } else {
+              hideWarning();
+            }
+          }, 80);
+        }, { once: true });
+
+        frame.addEventListener("error", showWarning, { once: true });
+      });
+    }
+
+    function showWarning() {
+      if (!state.url) return;
+      els.warningBanner.classList.add("visible");
+    }
+
+    function hideWarning() {
+      els.warningBanner.classList.remove("visible");
+    }
+
+    function loadUrl(rawUrl) {
+      const nextUrl = normalizeUrl(rawUrl);
+      if (!nextUrl) return;
+      try {
+        new URL(nextUrl);
+      } catch {
+        els.urlInput.focus();
+        return;
+      }
+      state.url = nextUrl;
+      els.urlInput.value = nextUrl;
+      saveHistory(nextUrl);
+      syncUrlParams();
+      renderPreviews();
+    }
+
+    function syncUrlParams() {
+      const params = new URLSearchParams();
+      if (state.url) params.set("url", state.url);
+      params.set("device", state.selectedName);
+      if (state.selectedName === "Custom") {
+        params.set("w", state.device.width);
+        params.set("h", state.device.height);
+      }
+      if (state.orientation === "landscape") params.set("orientation", "landscape");
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+      window.history.replaceState(null, "", next);
+    }
+
+    async function copyShareLink() {
+      const params = new URLSearchParams();
+      if (state.url) params.set("url", state.url);
+      params.set("device", state.selectedName);
+      if (state.selectedName === "Custom") {
+        params.set("w", state.device.width);
+        params.set("h", state.device.height);
+      }
+      if (state.orientation === "landscape") params.set("orientation", "landscape");
+      const base = window.location.origin && window.location.origin !== "null"
+        ? `${window.location.origin}${window.location.pathname}`
+        : window.location.href.split("?")[0];
+      const link = `${base}?${params}`;
+
+      try {
+        await navigator.clipboard.writeText(link);
+        flashButton(els.copyLinkBtn, "Copied");
+      } catch {
+        const helper = document.createElement("textarea");
+        helper.value = link;
+        helper.setAttribute("readonly", "");
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.select();
+        document.execCommand("copy");
+        helper.remove();
+        flashButton(els.copyLinkBtn, "Copied");
+      }
+    }
+
+    function flashButton(button, text) {
+      const original = button.textContent;
+      button.textContent = text;
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1200);
+    }
+
+    function cycleDevice(delta) {
+      const currentIndex = Math.max(0, PRESETS.findIndex((device) => device.name === state.selectedName));
+      const nextIndex = (currentIndex + delta + PRESETS.length) % PRESETS.length;
+      selectDevice(PRESETS[nextIndex].name, true);
+    }
+
+    function restoreFromParams() {
+      const params = new URLSearchParams(window.location.search);
+      const deviceParam = params.get("device");
+      const urlParam = params.get("url");
+      const orientationParam = params.get("orientation");
+      const customWidth = Number(params.get("w"));
+      const customHeight = Number(params.get("h"));
+
+      if (deviceParam === "Custom" && Number.isFinite(customWidth) && Number.isFinite(customHeight) && customWidth > 0 && customHeight > 0) {
+        state.selectedName = "Custom";
+        state.device = {
+          name: "Custom",
+          width: Math.round(customWidth),
+          height: Math.round(customHeight),
+          pixelRatio: window.devicePixelRatio || 1,
+          type: "custom",
+          userAgent: "Current browser"
+        };
+        state.orientation = state.device.width >= state.device.height ? "landscape" : "portrait";
+      } else if (deviceParam && PRESETS.some((device) => device.name === deviceParam)) {
+        state.selectedName = deviceParam;
+        state.device = { ...PRESETS.find((device) => device.name === deviceParam) };
+      }
+
+      if (orientationParam === "landscape" && state.device.height > state.device.width) {
+        [state.device.width, state.device.height] = [state.device.height, state.device.width];
+        state.orientation = "landscape";
+      }
+
+      if (urlParam) {
+        state.url = normalizeUrl(urlParam);
+        els.urlInput.value = state.url;
+        saveHistory(state.url);
+      }
+    }
+
+    function bindEvents() {
+      els.urlForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        loadUrl(els.urlInput.value);
+      });
+
+      els.historySelect.addEventListener("change", () => {
+        if (els.historySelect.value) {
+          els.urlInput.value = els.historySelect.value;
+          loadUrl(els.historySelect.value);
+          els.historySelect.value = "";
+        }
+      });
+
+      els.openBlockedBtn.addEventListener("click", () => {
+        if (state.url) window.open(state.url, "_blank", "noopener,noreferrer");
+      });
+      els.dismissWarningBtn.addEventListener("click", hideWarning);
+      els.rotateBtn.addEventListener("click", rotateDevice);
+      els.portraitBtn.addEventListener("click", () => setOrientation("portrait"));
+      els.landscapeBtn.addEventListener("click", () => setOrientation("landscape"));
+      els.autoFitBtn.addEventListener("click", () => setScale(getAutoScale(), true));
+      els.compareBtn.addEventListener("click", () => {
+        state.compareMode = !state.compareMode;
+        renderPreviews();
+        setScale(state.autoFit ? getAutoScale() : state.scale, state.autoFit);
+      });
+      els.copyLinkBtn.addEventListener("click", copyShareLink);
+
+      els.scaleSlider.addEventListener("input", () => {
+        setScale(Number(els.scaleSlider.value) / 100, false);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        const tag = document.activeElement && document.activeElement.tagName;
+        const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+        if (event.key === "Enter" && document.activeElement === els.urlInput) {
+          event.preventDefault();
+          loadUrl(els.urlInput.value);
+          return;
+        }
+        if (isTyping) return;
+        if (event.key === "ArrowRight") {
+          event.preventDefault();
+          cycleDevice(1);
+        } else if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          cycleDevice(-1);
+        } else if (event.key.toLowerCase() === "r") {
+          event.preventDefault();
+          rotateDevice();
+        }
+      });
+
+    }
+
+    function init() {
+      renderHistory();
+      restoreFromParams();
+      renderSidebar();
+      updateOrientationButtons();
+      renderPreviews();
+      setScale(getAutoScale(), true);
+      bindEvents();
+    }
+
+    init();
+  </script>
+</body>
+</html>
