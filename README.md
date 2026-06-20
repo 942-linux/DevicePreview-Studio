@@ -18,3 +18,4 @@ Then open `http://localhost:8080`.
 - Some websites block iframe embedding with `X-Frame-Options` or CSP `frame-ancestors`. DevicePreview Studio shows a warning and an open-in-new-tab action when this is likely.
 - Static browser pages cannot truly spoof `devicePixelRatio` or the iframe user agent. Presets display those values as QA metadata while the iframe uses the selected CSS viewport size.
 - Shareable links support `?url=...&device=...`, plus custom `w` and `h` values.
+- Note: If this site runs on HTTPS but the target URL is `http://`, the browser will block it (Mixed Content). Use a temporary HTTPS link, e.g. via Cloudflare Tunnel, instead.
