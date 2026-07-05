@@ -1,6 +1,6 @@
 # DevicePreview Studio
 
-# https://4917281930.github.io/DevicePreview-Studio
+ ***https://942-linux.github.io/DevicePreview-Studio***
 
 A frontend-only viewport preview tool designed to run on a phone while previewing how a URL renders in desktop, tablet, or phone viewport dimensions.
 
